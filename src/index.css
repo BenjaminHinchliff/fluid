@@ -1,0 +1,9 @@
+html, body {
+  margin: 0;
+}
+
+#fluid {
+  display: block;
+  height: 100vh;
+  margin: auto;
+}
