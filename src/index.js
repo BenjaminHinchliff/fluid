@@ -4,6 +4,7 @@ import standardFragSrc from './standard.frag';
 
 import * as shader from './shader';
 import * as quad from './quad';
+import {ProgramInfo} from './program';
 
 /** @type {HTMLCanvasElement} */
 const canvas = document.getElementById('fluid');
@@ -30,8 +31,14 @@ const standardFrag = shader.compileShader(
     standardFragSrc,
 );
 
-const standardProgram = shader.linkProgram(gl, [standardVert, standardFrag]);
-gl.useProgram(standardProgram);
+const standardProgram = new ProgramInfo(
+    gl,
+    [standardVert, standardFrag],
+    ['aPosition'],
+    [],
+);
+
+standardProgram.use(gl);
 
 const quadBuf = gl.createBuffer();
 gl.bindBuffer(gl.ARRAY_BUFFER, quadBuf);
@@ -43,10 +50,8 @@ gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, quad.indices, gl.STATIC_DRAW);
 
 const quadIdxType = gl.UNSIGNED_SHORT;
 
-const posAttrLoc = gl.getAttribLocation(standardProgram, 'aPosition');
-
-gl.enableVertexAttribArray(posAttrLoc);
-
-gl.vertexAttribPointer(posAttrLoc, 2, gl.FLOAT, false, 0, 0);
+const posLoc = standardProgram.attribs.aPosition;
+gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
+gl.enableVertexAttribArray(posLoc);
 
 gl.drawElements(gl.TRIANGLES, 6, quadIdxType, 0);
