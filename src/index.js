@@ -1,6 +1,7 @@
 import './index.css';
 import standardVertSrc from './standard.vert';
 import standardFragSrc from './standard.frag';
+import testTex from './test.png';
 
 import {compileShader} from './shader';
 import {createVertBuf, createIdxBuf} from './quad';
@@ -35,16 +36,75 @@ const standardProgram = new ProgramInfo(
     gl,
     [standardVert, standardFrag],
     ['aPosition'],
-    [],
+    ['uTex'],
 );
 
 standardProgram.use(gl);
 
-createVertBuf(gl);
-createIdxBuf(gl);
+const vertBuf = createVertBuf(gl);
+const idxBuf = createIdxBuf(gl);
 
-const posLoc = standardProgram.attribs.aPosition;
-gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
-gl.enableVertexAttribArray(posLoc);
+const texture = gl.createTexture();
+gl.bindTexture(gl.TEXTURE_2D, texture);
 
-gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
+const level = 0;
+const internalFormat = gl.RGBA;
+const srcFormat = gl.RGBA;
+const srcType = gl.UNSIGNED_BYTE;
+const tempData = new Uint8Array([0, 0, 255, 255]);
+gl.texImage2D(
+    gl.TEXTURE_2D,
+    level,
+    internalFormat,
+    1,
+    1,
+    0,
+    srcFormat,
+    srcType,
+    tempData,
+);
+
+/**
+ * tests if a value is a power of 2
+ * @param {number} val
+ * @return {boolean}
+ */
+function isPowerOf2(val) {
+  return (val & (val - 1)) == 0;
+}
+
+const texImg = new Image();
+texImg.onload = function() {
+  gl.bindTexture(gl.TEXTURE_2D, texture);
+  gl.texImage2D(
+      gl.TEXTURE_2D,
+      level,
+      internalFormat,
+      srcFormat,
+      srcType,
+      texImg,
+  );
+
+  console.assert(isPowerOf2(texImg.width) && isPowerOf2(texImg.height));
+
+  gl.generateMipmap(gl.TEXTURE_2D);
+};
+texImg.src = testTex;
+
+const drawFrame = () => {
+  gl.bindBuffer(gl.ARRAY_BUFFER, vertBuf);
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, idxBuf);
+
+  const posLoc = standardProgram.attribs.aPosition;
+  gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
+  gl.enableVertexAttribArray(posLoc);
+
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_2D, texture);
+  gl.uniform1i(standardProgram.uniforms.uTex, 0);
+
+  gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
+  requestAnimationFrame(drawFrame);
+};
+
+requestAnimationFrame(drawFrame);
