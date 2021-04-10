@@ -1,6 +1,6 @@
 import './index.css';
 import standardVertSrc from './standard.vert';
-import standardFragSrc from './standard.frag';
+import quadFragSrc from './quad.frag';
 import testTex from './test.png';
 
 import {compileShader} from './shader';
@@ -16,6 +16,9 @@ if (gl === null) {
   throw new Error('unable to initalize webgl');
 }
 
+gl.getExtension('OES_texture_float');
+gl.getExtension('OES_texture_float_linear');
+
 gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 
 gl.clearColor(0.0, 0.0, 0.0, 1.0);
@@ -26,15 +29,15 @@ const standardVert = compileShader(
     gl.VERTEX_SHADER,
     standardVertSrc,
 );
-const standardFrag = compileShader(
+const quadFrag = compileShader(
     gl,
     gl.FRAGMENT_SHADER,
-    standardFragSrc,
+    quadFragSrc,
 );
 
 const standardProgram = new ProgramInfo(
     gl,
-    [standardVert, standardFrag],
+    [standardVert, quadFrag],
     ['aPosition'],
     ['uTex'],
 );
