@@ -1,10 +1,10 @@
-import './index.css';
-import standardVertSrc from './standard.vert';
-import quadFragSrc from './quad.frag';
-import testTex from './test.png';
+import '../css/index.css';
+import standardVertSrc from '../shaders/standard.vert';
+import quadFragSrc from '../shaders/quad.frag';
 
 import {compileShader} from './shader';
-import {createVertBuf, createIdxBuf} from './quad';
+import * as quad from './quad';
+import {createVertBuf, createIdxBuf} from './buffers';
 import {ProgramInfo} from './program';
 
 /** @type {HTMLCanvasElement} */
@@ -44,8 +44,8 @@ const standardProgram = new ProgramInfo(
 
 standardProgram.use(gl);
 
-const vertBuf = createVertBuf(gl);
-const idxBuf = createIdxBuf(gl);
+const vertBuf = createVertBuf(gl, quad.vertices);
+const idxBuf = createIdxBuf(gl, quad.indices);
 
 const texture = gl.createTexture();
 gl.bindTexture(gl.TEXTURE_2D, texture);
@@ -66,33 +66,6 @@ gl.texImage2D(
     srcType,
     tempData,
 );
-
-/**
- * tests if a value is a power of 2
- * @param {number} val
- * @return {boolean}
- */
-function isPowerOf2(val) {
-  return (val & (val - 1)) == 0;
-}
-
-const texImg = new Image();
-texImg.onload = function() {
-  gl.bindTexture(gl.TEXTURE_2D, texture);
-  gl.texImage2D(
-      gl.TEXTURE_2D,
-      level,
-      internalFormat,
-      srcFormat,
-      srcType,
-      texImg,
-  );
-
-  console.assert(isPowerOf2(texImg.width) && isPowerOf2(texImg.height));
-
-  gl.generateMipmap(gl.TEXTURE_2D);
-};
-texImg.src = testTex;
 
 const drawFrame = () => {
   gl.bindBuffer(gl.ARRAY_BUFFER, vertBuf);
