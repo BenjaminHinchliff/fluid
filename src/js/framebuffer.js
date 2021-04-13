@@ -12,10 +12,10 @@ export class FrameBuffer {
     this.fb = ctx.createFramebuffer();
     ctx.bindFramebuffer(ctx.FRAMEBUFFER, this.fb);
 
-    this.c = this.createFloatTexture(ctx, width, height);
+    this.tex = this.createFloatTexture(ctx, width, height);
 
     ctx.framebufferTexture2D(
-        ctx.FRAMEBUFFER, ctx.COLOR_ATTACHMENT0, ctx.TEXTURE_2D, this.c, 0);
+        ctx.FRAMEBUFFER, ctx.COLOR_ATTACHMENT0, ctx.TEXTURE_2D, this.tex, 0);
 
     ctx.bindFramebuffer(ctx.FRAMEBUFFER, null);
   }
@@ -72,7 +72,9 @@ export class FrameBuffer {
    * @param {WebGLRenderingContext} ctx
    */
   clear(ctx) {
+    ctx.bindFramebuffer(ctx.FRAMEBUFFER, this.fb);
     ctx.clearColor(0.0, 0.0, 0.0, 1.0);
     ctx.clear(ctx.COLOR_BUFFER_BIT);
+    ctx.bindFramebuffer(ctx.FRAMEBUFFER, null);
   }
 }
