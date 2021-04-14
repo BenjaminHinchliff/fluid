@@ -7,11 +7,14 @@ import * as fluidOps from './fluid_passes';
 import {RenderPass} from './render_pass';
 import {FrameBuffer} from './framebuffer';
 import {makeCheckerboardArr} from './checkerboard';
+import MouseListener from './mouse';
+import {vec2} from 'gl-matrix';
 
 // temp sim settings
 const SETTINGS = {
-  viscosity: 1e-6,
+  viscosity: 1e-7,
   iterations: 20,
+  force: 500,
 };
 
 /** @type {HTMLCanvasElement} */
@@ -34,6 +37,8 @@ gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 
 gl.clearColor(0.0, 0.0, 0.0, 1.0);
 gl.clear(gl.COLOR_BUFFER_BIT);
+
+const mouse = new MouseListener(canvas);
 
 const shaders = new Shaders(gl);
 
@@ -99,16 +104,16 @@ const boundaryPass = new RenderPass(
     quad.indices,
 );
 
-// const colorFrag = compileShader(gl, gl.FRAGMENT_SHADER, colorFragSrc);
+const colorPass = new RenderPass(
+    gl,
+    [shaders.vert.standard, shaders.frag.color],
+    ['uColor', 'uImpulsePos', 'uColorFieldTexture'],
+    'aPosition',
+    quad.vertices,
+    quad.indices,
+);
 
-// const colorPass = new RenderPass(
-//     gl,
-//     [standardVert, colorFrag],
-//     ['uDeltaT', 'uRho', 'uColor', 'uImpulsePos', 'uColorFieldTexture'],
-//     'aPosition',
-//     quad.vertices,
-//     quad.indices,
-// );
+console.log(colorPass);
 
 let curVelocityField = new FrameBuffer(gl, width, height);
 let nextVelocityField = new FrameBuffer(gl, width, height);
@@ -134,6 +139,33 @@ const drawFrame = (time) => {
   lastTime = timeS;
 
   const deltaX = 1.0 / width;
+
+  if (mouse.down) {
+    // add test force
+    let force = [0.0, 0.0];
+    force = vec2.scale(force, mouse.velocity, SETTINGS.force);
+    [curVelocityField, nextVelocityField] = fluidOps.force(
+        gl,
+        forcePass,
+        deltaT,
+        rho,
+        force,
+        mouse.position,
+        curVelocityField,
+        nextVelocityField,
+    );
+
+    // add color
+    [curColorField, nextColorField] = fluidOps.color(
+        gl,
+        colorPass,
+        [1.0, 0.6, 0.0],
+        mouse.position,
+        curColorField,
+        nextColorField,
+    );
+  }
+
 
   // advect velocity field
   [curVelocityField, nextVelocityField] = fluidOps.advection(
@@ -170,18 +202,6 @@ const drawFrame = (time) => {
       jNext.unbind(gl);
     }
   }
-
-  // add test force
-  [curVelocityField, nextVelocityField] = fluidOps.force(
-      gl,
-      forcePass,
-      deltaT,
-      rho,
-      [1.0, 0.5],
-      [0.5, 0.5],
-      curVelocityField,
-      nextVelocityField,
-  );
 
   {
     divergenceFb = fluidOps.divergence(

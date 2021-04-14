@@ -121,7 +121,7 @@ export function color(
   ctx.uniform3fv(colorPass.uniforms.uColor, color);
   ctx.uniform2fv(colorPass.uniforms.uImpulsePos, impulsePos);
 
-  ctx.uniform1i(colorPass.uniforms.uColorFieldTexTure, 0);
+  ctx.uniform1i(colorPass.uniforms.uColorFieldTexture, 0);
 
   ctx.activeTexture(ctx.TEXTURE0);
   ctx.bindTexture(ctx.TEXTURE_2D, colorFieldTexture.tex);

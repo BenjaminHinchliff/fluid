@@ -1,13 +1,13 @@
 // wraps all the shader imports
-import standardVertSrc from '../shaders/standard.vert';
-import quadFragSrc from '../shaders/quad.frag';
-import advectFragSrc from '../shaders/advection.frag';
-import forceFragSrc from '../shaders/force.frag';
-import jacobiFragSrc from '../shaders/jacobi.frag';
-import divergenceFragSrc from '../shaders/divergence.frag';
-import subtractFragSrc from '../shaders/subtract.frag';
-import boundaryFragSrc from '../shaders/boundary.frag';
-import colorFragSrc from '../shaders/dye.frag';
+import standardVertSrc from './standard.vert';
+import quadFragSrc from './quad.frag';
+import advectFragSrc from './advection.frag';
+import forceFragSrc from './force.frag';
+import jacobiFragSrc from './jacobi.frag';
+import divergenceFragSrc from './divergence.frag';
+import subtractFragSrc from './subtract.frag';
+import boundaryFragSrc from './boundary.frag';
+import colorFragSrc from './color.frag';
 
 import {compileShader} from '../js/shader';
 
