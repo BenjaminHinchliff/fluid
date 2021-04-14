@@ -1,4 +1,4 @@
-precision highp float;
+precision mediump float;
 
 uniform float uDeltaT;
 uniform sampler2D uColorFieldTex;
