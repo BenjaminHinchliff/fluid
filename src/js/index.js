@@ -15,6 +15,7 @@ const SETTINGS = {
   viscosity: 1e-7,
   iterations: 20,
   force: 500,
+  vorticity: 10,
 };
 
 /** @type {HTMLCanvasElement} */
@@ -113,7 +114,14 @@ const colorPass = new RenderPass(
     quad.indices,
 );
 
-console.log(colorPass);
+const vorticityPass = new RenderPass(
+    gl,
+    [shaders.vert.standard, shaders.frag.vorticity],
+    ['uDeltaT', 'uDeltaX', 'uVorticity', 'uV'],
+    'aPosition',
+    quad.vertices,
+    quad.indices,
+);
 
 let curVelocityField = new FrameBuffer(gl, width, height);
 let nextVelocityField = new FrameBuffer(gl, width, height);
@@ -261,15 +269,16 @@ const drawFrame = (time) => {
       nextPressureField,
   );
 
-  //   // dye pass
-  //   [curColorField, nextColorField] = fluidOps.color(
-  //       gl,
-  //       colorPass,
-  //       [0.0, 0.0, 1.0],
-  //       [0.5, 0.5],
-  //       curColorField,
-  //       nextColorField,
-  //   );
+  // approximate small vortices (vorticity confinement)
+  [curVelocityField, nextVelocityField] = fluidOps.vorticity(
+      gl,
+      vorticityPass,
+      deltaT,
+      deltaX,
+      SETTINGS.vorticity,
+      curVelocityField,
+      nextVelocityField,
+  );
 
   // advect color field
   [curColorField, nextColorField] = fluidOps.advection(

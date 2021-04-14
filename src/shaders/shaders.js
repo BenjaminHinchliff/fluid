@@ -8,6 +8,7 @@ import divergenceFragSrc from './divergence.frag';
 import subtractFragSrc from './subtract.frag';
 import boundaryFragSrc from './boundary.frag';
 import colorFragSrc from './color.frag';
+import vorticityFragSrc from './vorticity.frag';
 
 import {compileShader} from '../js/shader';
 
@@ -57,6 +58,10 @@ export default class Shaders {
       {
         name: 'color',
         source: colorFragSrc,
+      },
+      {
+        name: 'vorticity',
+        source: vorticityFragSrc,
       },
     ];
     for (const src of fragSrcs) {

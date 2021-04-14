@@ -346,3 +346,48 @@ export function boundary(
 
   return [dst, x];
 }
+
+/**
+ * apply vorticity confinement to a given function
+ * @param {WebGLRenderingContext} ctx
+ * @param {RenderPass} vorticityPass
+ * @param {number} deltaT
+ * @param {number} deltaX
+ * @param {number} vorticity
+ * @param {FrameBuffer} v
+ * @param {FrameBuffer} dst
+ * @return {[FrameBuffer, FrameBuffer]}
+ */
+export function vorticity(
+    ctx,
+    vorticityPass,
+    deltaT,
+    deltaX,
+    vorticity,
+    v,
+    dst,
+) {
+  dst.bind(ctx);
+  vorticityPass.useProgram(ctx);
+
+  ctx.uniform1f(vorticityPass.uniforms.uDeltaT, deltaT);
+  ctx.uniform1f(vorticityPass.uniforms.uDeltaX, deltaX);
+  ctx.uniform1f(vorticityPass.uniforms.uVorticity, vorticity);
+
+  ctx.uniform1i(vorticityPass.uniforms.uV, 0);
+
+  ctx.activeTexture(ctx.TEXTURE0);
+  ctx.bindTexture(ctx.TEXTURE_2D, v.tex);
+
+  ctx.bindBuffer(ctx.ARRAY_BUFFER, vorticityPass.vertBuffer);
+  ctx.vertexAttribPointer(0, 2, ctx.FLOAT, false, 0, 0);
+  ctx.enableVertexAttribArray(0);
+
+  ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, vorticityPass.indexBuffer);
+
+  ctx.drawElements(ctx.TRIANGLES, 6, ctx.UNSIGNED_SHORT, 0);
+
+  dst.unbind(ctx);
+
+  return [dst, v];
+}
