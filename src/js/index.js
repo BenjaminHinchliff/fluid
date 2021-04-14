@@ -1,15 +1,7 @@
 import '../css/index.css';
-import standardVertSrc from '../shaders/standard.vert';
-import quadFragSrc from '../shaders/quad.frag';
-import advectFragSrc from '../shaders/advection.frag';
-import forceFragSrc from '../shaders/force.frag';
-import jacobiFragSrc from '../shaders/jacobi.frag';
-import divergenceFragSrc from '../shaders/divergence.frag';
-import subtractFragSrc from '../shaders/subtract.frag';
-import boundaryPassSrc from '../shaders/boundary.frag';
-// import colorFragSrc from '../shaders/dye.frag';
 
-import {compileShader} from './shader';
+import Shaders from '../shaders/shaders';
+
 import * as quad from './quad';
 import * as fluidOps from './fluid_passes';
 import {RenderPass} from './render_pass';
@@ -43,90 +35,64 @@ gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 gl.clearColor(0.0, 0.0, 0.0, 1.0);
 gl.clear(gl.COLOR_BUFFER_BIT);
 
-const standardVert = compileShader(
-    gl,
-    gl.VERTEX_SHADER,
-    standardVertSrc,
-);
-
-const quadFrag = compileShader(
-    gl,
-    gl.FRAGMENT_SHADER,
-    quadFragSrc,
-);
+const shaders = new Shaders(gl);
 
 const quadPass = new RenderPass(
     gl,
-    [standardVert, quadFrag],
+    [shaders.vert.standard, shaders.frag.quad],
     ['uTex'],
     'aPosition',
     quad.vertices,
     quad.indices,
 );
 
-const advectFrag = compileShader(
-    gl,
-    gl.FRAGMENT_SHADER,
-    advectFragSrc,
-);
-
 const advectPass = new RenderPass(
     gl,
-    [standardVert, advectFrag],
+    [shaders.vert.standard, shaders.frag.advect],
     ['uDeltaT', 'uColorFieldTex', 'uVecFieldTex'],
     'aPosition',
     quad.vertices,
     quad.indices);
 
-const forceFrag = compileShader(gl, gl.FRAGMENT_SHADER, forceFragSrc);
-
 const forcePass = new RenderPass(
     gl,
-    [standardVert, forceFrag],
+    [shaders.vert.standard, shaders.frag.force],
     ['uDeltaT', 'uRho', 'uForce', 'uImpulsePos', 'uVelocityFieldTexture'],
     'aPosition',
     quad.vertices,
     quad.indices,
 );
 
-const jacobiFrag = compileShader(gl, gl.FRAGMENT_SHADER, jacobiFragSrc);
-
 const jacobiPass = new RenderPass(
     gl,
-    [standardVert, jacobiFrag],
+    [shaders.vert.standard, shaders.frag.jacobi],
     ['uDeltaX', 'uAlpha', 'uRBeta', 'uX', 'uB'],
     'aPosition',
     quad.vertices,
     quad.indices,
 );
 
-const divergenceFrag = compileShader(gl, gl.FRAGMENT_SHADER, divergenceFragSrc);
-
 const divergencePass = new RenderPass(
     gl,
-    [standardVert, divergenceFrag],
+    [shaders.vert.standard, shaders.frag.divergence],
     ['uDeltaX', 'uW'],
     'aPosition',
     quad.vertices,
     quad.indices,
 );
 
-const subtractFrag = compileShader(gl, gl.FRAGMENT_SHADER, subtractFragSrc);
-
 const subtractPass = new RenderPass(
     gl,
-    [standardVert, subtractFrag],
+    [shaders.vert.standard, shaders.frag.subtract],
     ['uDeltaX', 'uP', 'uW'],
     'aPosition',
     quad.vertices,
     quad.indices,
 );
 
-const boundaryFrag = compileShader(gl, gl.FRAGMENT_SHADER, boundaryPassSrc);
-
 const boundaryPass = new RenderPass(
     gl,
-    [standardVert, boundaryFrag],
+    [shaders.vert.standard, shaders.frag.boundary],
     ['uDeltaX', 'uScale', 'uX'],
     'aPosition',
     quad.vertices,

@@ -12,7 +12,7 @@ void main() {
   float eps = 0.025;
   vec2 delta = vTexCoord - uImpulsePos;
   if (length(delta) < eps) {
-    origColor = vec4(uColor, 1.0);
+    origColor.xyz = uColor;
   }
 
   gl_FragColor = origColor;
