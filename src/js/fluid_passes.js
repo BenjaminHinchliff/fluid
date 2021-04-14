@@ -181,3 +181,126 @@ export function jacobiIteration(
 
   ctx.drawElements(ctx.TRIANGLES, 6, ctx.UNSIGNED_SHORT, 0);
 }
+
+/**
+ * utility method to compute multiple jacobi iterations
+ * @param {WebGLRenderingContext} ctx
+ * @param {RenderPass} jacobiPass
+ * @param {number} iter
+ * @param {number} deltaX
+ * @param {number} alpha
+ * @param {number} rBeta
+ * @param {FrameBuffer} x
+ * @param {FrameBuffer} b
+ * @param {FrameBuffer} dst
+ * @return {[FrameBuffer, FrameBuffer]}
+ */
+export function jacobiMethod(
+    ctx,
+    jacobiPass,
+    iter,
+    deltaX,
+    alpha,
+    rBeta,
+    x,
+    b,
+    dst,
+) {
+  const bufs = [x, dst];
+  for (let i = 0; i < iter; i += 1) {
+    const jCur = bufs[i % bufs.length];
+    const jDst = bufs[(i + 1) % bufs.length];
+
+    jDst.bind(ctx);
+    jacobiIteration(ctx, jacobiPass, deltaX, alpha, rBeta, jCur, b);
+    jDst.unbind(ctx);
+  }
+
+  // TODO: make this guaranteed to run for `iter` iterations
+  return [x, dst];
+}
+
+/**
+ * provide starting numbers for divergence to be calculated with jacobi
+ * iteration
+ * @param {WebGLRenderingContext} ctx
+ * @param {RenderPass} divergencePass
+ * @param {number} deltaX
+ * @param {FrameBuffer} w
+ * @param {FrameBuffer} dst
+ * @return {FrameBuffer}
+ */
+export function divergence(
+    ctx,
+    divergencePass,
+    deltaX,
+    w,
+    dst,
+) {
+  dst.bind(ctx);
+
+  divergencePass.useProgram(ctx);
+
+  ctx.uniform1f(divergencePass.uniforms.uDeltaX, deltaX);
+  ctx.uniform1i(divergencePass.uniforms.uW, 0);
+
+  ctx.activeTexture(ctx.TEXTURE0);
+  ctx.bindTexture(ctx.TEXTURE_2D, w.tex);
+
+  ctx.bindBuffer(ctx.ARRAY_BUFFER, divergencePass.vertBuffer);
+  ctx.vertexAttribPointer(0, 2, ctx.FLOAT, false, 0, 0);
+  ctx.enableVertexAttribArray(0);
+
+  ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, divergencePass.indexBuffer);
+
+  ctx.drawElements(ctx.TRIANGLES, 6, ctx.UNSIGNED_SHORT, 0);
+
+  dst.unbind(ctx);
+
+  return dst;
+}
+
+/**
+ * subtract the calculated divergence from given framebuffer
+ * @param {WebGLRenderingContext} ctx
+ * @param {RenderPass} subtractPass
+ * @param {number} deltaX
+ * @param {FrameBuffer} p
+ * @param {FrameBuffer} w
+ * @param {FrameBuffer} dst
+ * @return {[FrameBuffer, FrameBuffer]}
+ */
+export function subtract(
+    ctx,
+    subtractPass,
+    deltaX,
+    p,
+    w,
+    dst,
+) {
+  dst.bind(ctx);
+
+  subtractPass.useProgram(ctx);
+
+  ctx.uniform1f(subtractPass.uniforms.uDeltaX, deltaX);
+
+  ctx.uniform1i(subtractPass.uniforms.uP, 0);
+  ctx.uniform1i(subtractPass.uniforms.uW, 1);
+
+  ctx.activeTexture(ctx.TEXTURE0);
+  ctx.bindTexture(ctx.TEXTURE_2D, p.tex);
+  ctx.activeTexture(ctx.TEXTURE1);
+  ctx.bindTexture(ctx.TEXTURE_2D, w.tex);
+
+  ctx.bindBuffer(ctx.ARRAY_BUFFER, subtractPass.vertBuffer);
+  ctx.vertexAttribPointer(0, 2, ctx.FLOAT, false, 0, 0);
+  ctx.enableVertexAttribArray(0);
+
+  ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, subtractPass.indexBuffer);
+
+  ctx.drawElements(ctx.TRIANGLES, 6, ctx.UNSIGNED_SHORT, 0);
+
+  dst.unbind(ctx);
+
+  return [dst, w];
+}

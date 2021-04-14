@@ -4,6 +4,8 @@ import quadFragSrc from '../shaders/quad.frag';
 import advectFragSrc from '../shaders/advection.frag';
 import forceFragSrc from '../shaders/force.frag';
 import jacobiFragSrc from '../shaders/jacobi.frag';
+import divergenceFragSrc from '../shaders/divergence.frag';
+import subtractFragSrc from '../shaders/subtract.frag';
 // import colorFragSrc from '../shaders/dye.frag';
 
 import {compileShader} from './shader';
@@ -97,6 +99,28 @@ const jacobiPass = new RenderPass(
     quad.indices,
 );
 
+const divergenceFrag = compileShader(gl, gl.FRAGMENT_SHADER, divergenceFragSrc);
+
+const divergencePass = new RenderPass(
+    gl,
+    [standardVert, divergenceFrag],
+    ['uDeltaX', 'uW'],
+    'aPosition',
+    quad.vertices,
+    quad.indices,
+);
+
+const subtractFrag = compileShader(gl, gl.FRAGMENT_SHADER, subtractFragSrc);
+
+const subtractPass = new RenderPass(
+    gl,
+    [standardVert, subtractFrag],
+    ['uDeltaX', 'uP', 'uW'],
+    'aPosition',
+    quad.vertices,
+    quad.indices,
+);
+
 // const colorFrag = compileShader(gl, gl.FRAGMENT_SHADER, colorFragSrc);
 
 // const colorPass = new RenderPass(
@@ -108,10 +132,13 @@ const jacobiPass = new RenderPass(
 //     quad.indices,
 // );
 
-console.log(jacobiPass);
-
 let curVelocityField = new FrameBuffer(gl, width, height);
 let nextVelocityField = new FrameBuffer(gl, width, height);
+
+let curPressureField = new FrameBuffer(gl, width, height);
+let nextPressureField = new FrameBuffer(gl, width, height);
+
+let divergenceFb = new FrameBuffer(gl, width, height);
 
 const colorData = makeCheckerboardArr(width, height);
 let curColorField = new FrameBuffer(gl, width, height, colorData);
@@ -121,12 +148,11 @@ const rho = 1e-3;
 let lastTime = null;
 const drawFrame = (time) => {
   const timeS = time / 1000.0;
-  let deltaT = timeS - lastTime;
+  let deltaT = 1.0 / 60.0;
   // prevent chaos
   if (lastTime === null) {
     deltaT = 1.0 / 60.0;
   }
-  console.log(deltaT);
   lastTime = timeS;
 
   const deltaX = 1.0 / width;
@@ -142,19 +168,29 @@ const drawFrame = (time) => {
   );
 
   // viscously diffuse vector field
-  const iter = SETTINGS.iterations;
-  const viscosity = SETTINGS.viscosity;
-  const alpha = (deltaX * deltaX) / (viscosity * deltaT);
-  const rBeta = 1.0 / (4.0 + alpha);
+  {
+    const iter = SETTINGS.iterations;
+    const viscosity = SETTINGS.viscosity;
+    const alpha = (deltaX * deltaX) / (viscosity * deltaT);
+    const rBeta = 1.0 / (4.0 + alpha);
 
-  const bufs = [curVelocityField, nextVelocityField];
-  for (let i = 0; i < iter; i += 1) {
-    const jCur = bufs[i % 2];
-    const jNext = bufs[(i + 1) % 2];
+    const bufs = [curVelocityField, nextVelocityField];
+    for (let i = 0; i < iter; i += 1) {
+      const jCur = bufs[i % 2];
+      const jNext = bufs[(i + 1) % 2];
 
-    jNext.bind(gl);
-    fluidOps.jacobiIteration(gl, jacobiPass, deltaX, alpha, rBeta, jCur, jCur);
-    jNext.unbind(gl);
+      jNext.bind(gl);
+      fluidOps.jacobiIteration(
+          gl,
+          jacobiPass,
+          deltaX,
+          alpha,
+          rBeta,
+          jCur,
+          jCur,
+      );
+      jNext.unbind(gl);
+    }
   }
 
   // add test force
@@ -163,11 +199,48 @@ const drawFrame = (time) => {
       forcePass,
       deltaT,
       rho,
-      [1.0, 0.1],
+      [1.0, 0.5],
       [0.5, 0.5],
       curVelocityField,
       nextVelocityField,
   );
+
+  {
+    divergenceFb = fluidOps.divergence(
+        gl,
+        divergencePass,
+        deltaX,
+        curVelocityField,
+        divergenceFb,
+    );
+
+    const alpha = -(deltaX * deltaX);
+    const rBeta = 0.25;
+
+    [curPressureField, nextPressureField] = fluidOps.jacobiMethod(
+        gl,
+        jacobiPass,
+        SETTINGS.iterations,
+        deltaX,
+        alpha,
+        rBeta,
+        curPressureField,
+        divergenceFb,
+        nextPressureField,
+    );
+  }
+
+  // gradient subtraction
+  {
+    [curVelocityField, nextVelocityField] = fluidOps.subtract(
+        gl,
+        subtractPass,
+        deltaX,
+        curPressureField,
+        curVelocityField,
+        nextVelocityField,
+    );
+  }
 
   //   // dye pass
   //   [curColorField, nextColorField] = fluidOps.color(

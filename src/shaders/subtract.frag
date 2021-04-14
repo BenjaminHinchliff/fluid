@@ -14,7 +14,7 @@ void main() {
 
   vec4 color = texture2D(uW, vTexCoord);
   float halfRdx = 1.0 / (2.0 * uDeltaX);
-  color.xy = halfRdx * vec2((pRight - pLeft), (pUp - pDown));
+  color.xy -= halfRdx * vec2((pRight - pLeft), (pUp - pDown));
 
   gl_FragColor = color;
 }
