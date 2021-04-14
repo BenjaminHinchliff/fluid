@@ -3,20 +3,20 @@ import standardVertSrc from '../shaders/standard.vert';
 import quadFragSrc from '../shaders/quad.frag';
 import advectFragSrc from '../shaders/advection.frag';
 import forceFragSrc from '../shaders/force.frag';
-import colorFragSrc from '../shaders/dye.frag';
+// import colorFragSrc from '../shaders/dye.frag';
 
 import {compileShader} from './shader';
 import * as quad from './quad';
 import * as fluidOps from './fluid_passes';
-import {createVertBuf, createIdxBuf} from './buffers';
-import {ProgramInfo} from './program';
 import {RenderPass} from './render_pass';
-import { FrameBuffer } from './framebuffer';
-import { vec3 } from 'gl-matrix';
+import {FrameBuffer} from './framebuffer';
+import {makeCheckerboardArr} from './checkerboard';
 
 /** @type {HTMLCanvasElement} */
 const canvas = document.getElementById('fluid');
-const {width, height} = canvas;
+const size = window.innerHeight;
+const width = canvas.width = size;
+const height = canvas.height = size;
 
 const gl = canvas.getContext('webgl');
 if (gl === null) {
@@ -26,6 +26,7 @@ if (gl === null) {
 
 gl.getExtension('OES_texture_float');
 gl.getExtension('OES_texture_float_linear');
+gl.getExtension('WEBGL_color_buffer_float');
 
 gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 
@@ -78,21 +79,22 @@ const forcePass = new RenderPass(
     quad.indices,
 );
 
-const colorFrag = compileShader(gl, gl.FRAGMENT_SHADER, colorFragSrc);
+// const colorFrag = compileShader(gl, gl.FRAGMENT_SHADER, colorFragSrc);
 
-const colorPass = new RenderPass(
-    gl,
-    [standardVert, colorFrag],
-    ['uDeltaT', 'uRho', 'uColor', 'uImpulsePos', 'uColorFieldTexture'],
-    'aPosition',
-    quad.vertices,
-    quad.indices,
-);
+// const colorPass = new RenderPass(
+//     gl,
+//     [standardVert, colorFrag],
+//     ['uDeltaT', 'uRho', 'uColor', 'uImpulsePos', 'uColorFieldTexture'],
+//     'aPosition',
+//     quad.vertices,
+//     quad.indices,
+// );
 
 let curVelocityField = new FrameBuffer(gl, width, height);
 let nextVelocityField = new FrameBuffer(gl, width, height);
 
-let curColorField = new FrameBuffer(gl, width, height);
+const colorData = makeCheckerboardArr(width, height);
+let curColorField = new FrameBuffer(gl, width, height, colorData);
 let nextColorField = new FrameBuffer(gl, width, height);
 
 const rho = 1e-3;
@@ -121,21 +123,21 @@ const drawFrame = (time) => {
       forcePass,
       deltaT,
       rho,
-      [3.0, 0.0],
+      [1.0, 0.0],
       [0.5, 0.5],
       curVelocityField,
       nextVelocityField,
   );
 
-  // dye pass
-  [curColorField, nextColorField] = fluidOps.color(
-      gl,
-      colorPass,
-      [0.0, 0.0, 1.0],
-      [0.5, 0.5],
-      curColorField,
-      nextColorField,
-  );
+  //   // dye pass
+  //   [curColorField, nextColorField] = fluidOps.color(
+  //       gl,
+  //       colorPass,
+  //       [0.0, 0.0, 1.0],
+  //       [0.5, 0.5],
+  //       curColorField,
+  //       nextColorField,
+  //   );
 
   // advect color field
   [curColorField, nextColorField] = fluidOps.advection(

@@ -7,12 +7,13 @@ export class FrameBuffer {
    * @param {WebGLRenderingContext} ctx
    * @param {number} width
    * @param {number} height
+   * @param {Float32Array} data
    */
-  constructor(ctx, width, height) {
+  constructor(ctx, width, height, data) {
     this.fb = ctx.createFramebuffer();
     ctx.bindFramebuffer(ctx.FRAMEBUFFER, this.fb);
 
-    this.tex = this.createFloatTexture(ctx, width, height);
+    this.tex = this.createFloatTexture(ctx, width, height, data);
 
     ctx.framebufferTexture2D(
         ctx.FRAMEBUFFER, ctx.COLOR_ATTACHMENT0, ctx.TEXTURE_2D, this.tex, 0);
@@ -25,9 +26,10 @@ export class FrameBuffer {
    * @param {WebGLRenderingContext} ctx
    * @param {number} width
    * @param {number} height
+   * @param {Float32Array} data
    * @return {WebGLTexture}
    */
-  createFloatTexture(ctx, width, height) {
+  createFloatTexture(ctx, width, height, data) {
     const texture = ctx.createTexture();
     ctx.bindTexture(ctx.TEXTURE_2D, texture);
 
@@ -39,7 +41,7 @@ export class FrameBuffer {
         0,
         ctx.RGBA,
         ctx.FLOAT,
-        null,
+        data ?? null,
     );
 
     ctx.texParameteri(ctx.TEXTURE_2D, ctx.TEXTURE_MIN_FILTER, ctx.LINEAR);

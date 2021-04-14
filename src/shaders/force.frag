@@ -16,6 +16,5 @@ void main() {
 
   color.xy += scale * uForce;
 
-  color.w = 1.0;
   gl_FragColor = color;
 }
