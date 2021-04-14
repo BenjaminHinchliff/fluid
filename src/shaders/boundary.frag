@@ -19,7 +19,7 @@ void main() {
   } else if (1.0 - vTexCoord.y < eps) {
     offset = vec2(0.0, -uDeltaX);
   } else {
-    // prevent scaling
+    // prevent scaling if not on boundary
     gl_FragColor = texture2D(uX, vTexCoord);
     return;
   }

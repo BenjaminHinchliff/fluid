@@ -304,3 +304,45 @@ export function subtract(
 
   return [dst, w];
 }
+
+/**
+ * apply boundary conditions (walls) to a given framebuffer
+ * @param {WebGLRenderingContext} ctx
+ * @param {RenderPass} boundaryPass
+ * @param {number} deltaX
+ * @param {number} scale
+ * @param {FrameBuffer} x
+ * @param {FrameBuffer} dst
+ * @return {[FrameBuffer, FrameBuffer]}
+ */
+export function boundary(
+    ctx,
+    boundaryPass,
+    deltaX,
+    scale,
+    x,
+    dst,
+) {
+  dst.bind(ctx);
+  boundaryPass.useProgram(ctx);
+
+  ctx.uniform1f(boundaryPass.uniforms.uDeltaX, deltaX);
+  ctx.uniform1f(boundaryPass.uniforms.uScale, scale);
+
+  ctx.uniform1i(boundaryPass.uniforms.uX, 0);
+
+  ctx.activeTexture(ctx.TEXTURE0);
+  ctx.bindTexture(ctx.TEXTURE_2D, x.tex);
+
+  ctx.bindBuffer(ctx.ARRAY_BUFFER, boundaryPass.vertBuffer);
+  ctx.vertexAttribPointer(0, 2, ctx.FLOAT, false, 0, 0);
+  ctx.enableVertexAttribArray(0);
+
+  ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, boundaryPass.indexBuffer);
+
+  ctx.drawElements(ctx.TRIANGLES, 6, ctx.UNSIGNED_SHORT, 0);
+
+  dst.unbind(ctx);
+
+  return [dst, x];
+}
