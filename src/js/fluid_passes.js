@@ -138,3 +138,46 @@ export function color(
 
   return [dstTexture, colorFieldTexture];
 }
+
+/**
+ * run one iteration of jacobi iterative solving
+ * @param {WebGLRenderingContext} ctx
+ * @param {RenderPass} jacobiPass
+ * @param {number} deltaX
+ * @param {number} alpha
+ * @param {number} rBeta
+ * @param {FrameBuffer} x
+ * @param {FrameBuffer} b
+ */
+export function jacobiIteration(
+    ctx,
+    jacobiPass,
+    deltaX,
+    alpha,
+    rBeta,
+    x,
+    b,
+) {
+  jacobiPass.useProgram(ctx);
+
+  ctx.uniform1f(jacobiPass.uniforms.uDeltaX, deltaX);
+  ctx.uniform1f(jacobiPass.uniforms.uAlpha, alpha);
+  ctx.uniform1f(jacobiPass.uniforms.uRBeta, rBeta);
+
+  ctx.uniform1i(jacobiPass.uniforms.uX, 0);
+  ctx.uniform1i(jacobiPass.uniforms.uB, 1);
+
+  ctx.activeTexture(ctx.TEXTURE0);
+  ctx.bindTexture(ctx.TEXTURE_2D, x.tex);
+
+  ctx.activeTexture(ctx.TEXTURE1);
+  ctx.bindTexture(ctx.TEXTURE_2D, b.tex);
+
+  ctx.bindBuffer(ctx.ARRAY_BUFFER, jacobiPass.vertBuffer);
+  ctx.vertexAttribPointer(0, 2, ctx.FLOAT, false, 0, 0);
+  ctx.enableVertexAttribArray(0);
+
+  ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, jacobiPass.indexBuffer);
+
+  ctx.drawElements(ctx.TRIANGLES, 6, ctx.UNSIGNED_SHORT, 0);
+}

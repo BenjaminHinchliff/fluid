@@ -3,6 +3,7 @@ import standardVertSrc from '../shaders/standard.vert';
 import quadFragSrc from '../shaders/quad.frag';
 import advectFragSrc from '../shaders/advection.frag';
 import forceFragSrc from '../shaders/force.frag';
+import jacobiFragSrc from '../shaders/jacobi.frag';
 // import colorFragSrc from '../shaders/dye.frag';
 
 import {compileShader} from './shader';
@@ -11,6 +12,12 @@ import * as fluidOps from './fluid_passes';
 import {RenderPass} from './render_pass';
 import {FrameBuffer} from './framebuffer';
 import {makeCheckerboardArr} from './checkerboard';
+
+// temp sim settings
+const SETTINGS = {
+  viscosity: 1e-6,
+  iterations: 20,
+};
 
 /** @type {HTMLCanvasElement} */
 const canvas = document.getElementById('fluid');
@@ -21,7 +28,7 @@ const height = canvas.height = size;
 const gl = canvas.getContext('webgl');
 if (gl === null) {
   alert('unable to initialize webgl');
-  throw new Error('unable to initalize webgl');
+  throw new Error('unable to initialize webgl');
 }
 
 gl.getExtension('OES_texture_float');
@@ -79,6 +86,17 @@ const forcePass = new RenderPass(
     quad.indices,
 );
 
+const jacobiFrag = compileShader(gl, gl.FRAGMENT_SHADER, jacobiFragSrc);
+
+const jacobiPass = new RenderPass(
+    gl,
+    [standardVert, jacobiFrag],
+    ['uDeltaX', 'uAlpha', 'uRBeta', 'uX', 'uB'],
+    'aPosition',
+    quad.vertices,
+    quad.indices,
+);
+
 // const colorFrag = compileShader(gl, gl.FRAGMENT_SHADER, colorFragSrc);
 
 // const colorPass = new RenderPass(
@@ -89,6 +107,8 @@ const forcePass = new RenderPass(
 //     quad.vertices,
 //     quad.indices,
 // );
+
+console.log(jacobiPass);
 
 let curVelocityField = new FrameBuffer(gl, width, height);
 let nextVelocityField = new FrameBuffer(gl, width, height);
@@ -101,11 +121,15 @@ const rho = 1e-3;
 let lastTime = null;
 const drawFrame = (time) => {
   const timeS = time / 1000.0;
+  let deltaT = timeS - lastTime;
+  // prevent chaos
   if (lastTime === null) {
-    lastTime = timeS;
+    deltaT = 1.0 / 60.0;
   }
-  const deltaT = timeS - lastTime;
+  console.log(deltaT);
   lastTime = timeS;
+
+  const deltaX = 1.0 / width;
 
   // advect velocity field
   [curVelocityField, nextVelocityField] = fluidOps.advection(
@@ -117,13 +141,29 @@ const drawFrame = (time) => {
       nextVelocityField,
   );
 
+  // viscously diffuse vector field
+  const iter = SETTINGS.iterations;
+  const viscosity = SETTINGS.viscosity;
+  const alpha = (deltaX * deltaX) / (viscosity * deltaT);
+  const rBeta = 1.0 / (4.0 + alpha);
+
+  const bufs = [curVelocityField, nextVelocityField];
+  for (let i = 0; i < iter; i += 1) {
+    const jCur = bufs[i % 2];
+    const jNext = bufs[(i + 1) % 2];
+
+    jNext.bind(gl);
+    fluidOps.jacobiIteration(gl, jacobiPass, deltaX, alpha, rBeta, jCur, jCur);
+    jNext.unbind(gl);
+  }
+
   // add test force
   [curVelocityField, nextVelocityField] = fluidOps.force(
       gl,
       forcePass,
       deltaT,
       rho,
-      [1.0, 0.0],
+      [1.0, 0.1],
       [0.5, 0.5],
       curVelocityField,
       nextVelocityField,
