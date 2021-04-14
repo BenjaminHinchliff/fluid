@@ -6,6 +6,7 @@ import forceFragSrc from '../shaders/force.frag';
 import jacobiFragSrc from '../shaders/jacobi.frag';
 import divergenceFragSrc from '../shaders/divergence.frag';
 import subtractFragSrc from '../shaders/subtract.frag';
+import boundaryPassSrc from '../shaders/boundary.frag';
 // import colorFragSrc from '../shaders/dye.frag';
 
 import {compileShader} from './shader';
@@ -121,6 +122,17 @@ const subtractPass = new RenderPass(
     quad.indices,
 );
 
+const boundaryFrag = compileShader(gl, gl.FRAGMENT_SHADER, boundaryPassSrc);
+
+const boundaryPass = new RenderPass(
+    gl,
+    [standardVert, boundaryFrag],
+    ['uDeltaX', 'uScale', 'uX'],
+    'aPosition',
+    quad.vertices,
+    quad.indices,
+);
+
 // const colorFrag = compileShader(gl, gl.FRAGMENT_SHADER, colorFragSrc);
 
 // const colorPass = new RenderPass(
@@ -148,9 +160,9 @@ const rho = 1e-3;
 let lastTime = null;
 const drawFrame = (time) => {
   const timeS = time / 1000.0;
-  let deltaT = 1.0 / 60.0;
-  // prevent chaos
-  if (lastTime === null) {
+  let deltaT = timeS - lastTime;
+  // prevent chaos with dt of 0 and jumps after tabbing in
+  if (lastTime === null || (deltaT > 1.0 / 10.0)) {
     deltaT = 1.0 / 60.0;
   }
   lastTime = timeS;
@@ -241,6 +253,27 @@ const drawFrame = (time) => {
         nextVelocityField,
     );
   }
+
+  // boundaries
+  // vel
+  [curVelocityField, nextVelocityField] = fluidOps.boundary(
+      gl,
+      boundaryPass,
+      deltaX,
+      -1.0,
+      curVelocityField,
+      nextVelocityField,
+  );
+
+  // pressure
+  [curPressureField, nextPressureField] = fluidOps.boundary(
+      gl,
+      boundaryPass,
+      deltaX,
+      1.0,
+      curPressureField,
+      nextPressureField,
+  );
 
   //   // dye pass
   //   [curColorField, nextColorField] = fluidOps.color(
