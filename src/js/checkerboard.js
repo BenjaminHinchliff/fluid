@@ -14,12 +14,12 @@ export function makeCheckerboardArr(width, height) {
       const xStep = Math.floor(x / blockSize);
       const yStep = Math.floor(y / blockSize);
 
-      let val = 0.0;
+      let val = 0.2;
       if ((xStep + yStep) % 2 === 0) {
         val = 1.0;
       }
 
-      data.push(val, val, val, 1.0);
+      data.push(0.1, 0.1, val, 1.0);
     }
   }
 
