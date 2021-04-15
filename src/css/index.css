@@ -2,6 +2,10 @@ html, body {
   margin: 0;
 }
 
+.parameter-slider label, .dye-color-wrapper label {
+  display: block;
+}
+
 #fluid {
   width: 70vh;
   min-width: 0px;

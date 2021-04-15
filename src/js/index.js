@@ -157,7 +157,7 @@ const drawFrame = (time) => {
     [curColorField, nextColorField] = fluidOps.color(
         ctx,
         colorPass,
-        [1.0, 0.6, 0.0],
+        controls.color,
         mouse.position,
         curColorField,
         nextColorField,
