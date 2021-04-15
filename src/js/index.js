@@ -20,9 +20,16 @@ const SETTINGS = {
 
 /** @type {HTMLCanvasElement} */
 const canvas = document.getElementById('fluid');
-const size = window.innerHeight;
-const width = canvas.width = size;
-const height = canvas.height = size;
+let width;
+let height;
+
+const getDims = () => {
+  width = canvas.width;
+  height = canvas.height = width;
+};
+
+getDims();
+window.addEventListener('resize', getDims);
 
 const ctx = canvas.getContext('webgl');
 if (ctx === null) {

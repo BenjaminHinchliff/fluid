@@ -5,6 +5,15 @@
         <title><%- htmlWebpackPlugin.options.title %></title>
     </head>
     <body>
-        <canvas id="fluid"></canvas>
+        <div id="controls-wrapper">
+            <canvas id="fluid"></canvas>
+            <div id="controls">
+                <div class="parameter-slider">
+                    <p>Accuracy (Jacobi Iterations)</p>
+                    <input class="parameter" type="range" min="10" max="50" value="20">
+                    <span class="parameter-value"></span>
+                </div>
+            </div>
+        </div>
     </body>
 </html>
