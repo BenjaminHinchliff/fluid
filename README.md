@@ -1,15 +1,3 @@
-# 🚀 Welcome to your new awesome project!
+# Fluid Simulator 
 
-This project has been created using **webpack-cli**, you can now run
-
-```
-npm run build
-```
-
-or
-
-```
-yarn build
-```
-
-to bundle your application
+An implementaion of the Fast Fluid Dynamics algorithm for fluid simulation based on [this](https://developer.download.nvidia.com/books/HTML/gpugems/gpugems_ch38.html) gpu gems chapter and [this](https://github.com/sanjayyepuri/fluids) webassembly example, built with pure JavaScript and WebGL 1.0 (and webpack I guess).
