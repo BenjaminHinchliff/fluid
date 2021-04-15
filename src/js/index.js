@@ -9,14 +9,9 @@ import * as fluidOps from './fluid_passes';
 import {RenderPass} from './render_pass';
 import {FrameBuffer} from './framebuffer';
 import {makeCheckerboardArr} from './checkerboard';
+import Controls from './controls';
 
-// temp sim settings
-const SETTINGS = {
-  viscosity: 1e-7,
-  iterations: 20,
-  force: 500,
-  vorticity: 10,
-};
+const controls = new Controls(document.getElementById('controls'));
 
 /** @type {HTMLCanvasElement} */
 const canvas = document.getElementById('fluid');
@@ -158,7 +153,7 @@ const drawFrame = (time) => {
   if (mouse.down) {
     // add test force
     let force = [0.0, 0.0];
-    force = scale(force, mouse.velocity, SETTINGS.force);
+    force = scale(force, mouse.velocity, controls.force.value);
     [curVelocityField, nextVelocityField] = fluidOps.force(
         ctx,
         forcePass,
@@ -194,8 +189,8 @@ const drawFrame = (time) => {
 
   // viscously diffuse vector field
   {
-    const iter = SETTINGS.iterations;
-    const viscosity = SETTINGS.viscosity;
+    const iter = controls.jacobi.value;
+    const viscosity = Math.pow(10, controls.viscosity.value);
     const alpha = (deltaX * deltaX) / (viscosity * deltaT);
     const rBeta = 1.0 / (4.0 + alpha);
 
@@ -233,7 +228,7 @@ const drawFrame = (time) => {
     [curPressureField, nextPressureField] = fluidOps.jacobiMethod(
         ctx,
         jacobiPass,
-        SETTINGS.iterations,
+        controls.jacobi.value,
         deltaX,
         alpha,
         rBeta,
@@ -282,7 +277,7 @@ const drawFrame = (time) => {
       vorticityPass,
       deltaT,
       deltaX,
-      SETTINGS.vorticity,
+      controls.vorticity.value,
       curVelocityField,
       nextVelocityField,
   );
