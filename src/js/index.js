@@ -1,14 +1,14 @@
 import '../css/index.css';
 
-import Shaders from '../shaders/shaders';
+import {scale} from 'gl-matrix/vec2';
 
+import Shaders from '../shaders/shaders';
+import MouseListener from './mouse';
 import * as quad from './quad';
 import * as fluidOps from './fluid_passes';
 import {RenderPass} from './render_pass';
 import {FrameBuffer} from './framebuffer';
 import {makeCheckerboardArr} from './checkerboard';
-import MouseListener from './mouse';
-import {vec2} from 'gl-matrix';
 
 // temp sim settings
 const SETTINGS = {
@@ -151,7 +151,7 @@ const drawFrame = (time) => {
   if (mouse.down) {
     // add test force
     let force = [0.0, 0.0];
-    force = vec2.scale(force, mouse.velocity, SETTINGS.force);
+    force = scale(force, mouse.velocity, SETTINGS.force);
     [curVelocityField, nextVelocityField] = fluidOps.force(
         gl,
         forcePass,

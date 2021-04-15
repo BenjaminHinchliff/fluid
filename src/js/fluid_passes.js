@@ -1,4 +1,5 @@
 /* eslint-disable no-unused-vars */
+// used only as types
 import {RenderPass} from './render_pass';
 import {FrameBuffer} from './framebuffer';
 import {vec3, vec2} from 'gl-matrix';
@@ -23,7 +24,6 @@ export function advection(
     dstColorField,
 ) {
   dstColorField.bind(ctx);
-  // dstColorField.clear(ctx);
 
   advectPass.useProgram(ctx);
 

@@ -1,4 +1,4 @@
-import {vec2} from 'gl-matrix';
+import {sub} from 'gl-matrix/vec2';
 
 /**
  * keeps track of the click state and velocity of a mouse for a given element
@@ -36,7 +36,7 @@ export default class MouseListener {
       if (!this.position) {
         this.position = relPos;
       }
-      this.velocity = vec2.sub(this.velocity, relPos, this.position);
+      this.velocity = sub(this.velocity, relPos, this.position);
       this.position = relPos;
     });
 
