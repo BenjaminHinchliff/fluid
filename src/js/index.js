@@ -24,27 +24,27 @@ const size = window.innerHeight;
 const width = canvas.width = size;
 const height = canvas.height = size;
 
-const gl = canvas.getContext('webgl');
-if (gl === null) {
+const ctx = canvas.getContext('webgl');
+if (ctx === null) {
   alert('unable to initialize webgl');
   throw new Error('unable to initialize webgl');
 }
 
-gl.getExtension('OES_texture_float');
-gl.getExtension('OES_texture_float_linear');
-gl.getExtension('WEBGL_color_buffer_float');
+ctx.getExtension('OES_texture_float');
+ctx.getExtension('OES_texture_float_linear');
+ctx.getExtension('WEBGL_color_buffer_float');
 
-gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
+ctx.viewport(0, 0, ctx.canvas.width, ctx.canvas.height);
 
-gl.clearColor(0.0, 0.0, 0.0, 1.0);
-gl.clear(gl.COLOR_BUFFER_BIT);
+ctx.clearColor(0.0, 0.0, 0.0, 1.0);
+ctx.clear(ctx.COLOR_BUFFER_BIT);
 
 const mouse = new MouseListener(canvas);
 
-const shaders = new Shaders(gl);
+const shaders = new Shaders(ctx);
 
 const quadPass = new RenderPass(
-    gl,
+    ctx,
     [shaders.vert.standard, shaders.frag.quad],
     ['uTex'],
     'aPosition',
@@ -53,7 +53,7 @@ const quadPass = new RenderPass(
 );
 
 const advectPass = new RenderPass(
-    gl,
+    ctx,
     [shaders.vert.standard, shaders.frag.advect],
     ['uDeltaT', 'uColorFieldTex', 'uVecFieldTex'],
     'aPosition',
@@ -61,7 +61,7 @@ const advectPass = new RenderPass(
     quad.indices);
 
 const forcePass = new RenderPass(
-    gl,
+    ctx,
     [shaders.vert.standard, shaders.frag.force],
     ['uDeltaT', 'uRho', 'uForce', 'uImpulsePos', 'uVelocityFieldTexture'],
     'aPosition',
@@ -70,7 +70,7 @@ const forcePass = new RenderPass(
 );
 
 const jacobiPass = new RenderPass(
-    gl,
+    ctx,
     [shaders.vert.standard, shaders.frag.jacobi],
     ['uDeltaX', 'uAlpha', 'uRBeta', 'uX', 'uB'],
     'aPosition',
@@ -79,7 +79,7 @@ const jacobiPass = new RenderPass(
 );
 
 const divergencePass = new RenderPass(
-    gl,
+    ctx,
     [shaders.vert.standard, shaders.frag.divergence],
     ['uDeltaX', 'uW'],
     'aPosition',
@@ -88,7 +88,7 @@ const divergencePass = new RenderPass(
 );
 
 const subtractPass = new RenderPass(
-    gl,
+    ctx,
     [shaders.vert.standard, shaders.frag.subtract],
     ['uDeltaX', 'uP', 'uW'],
     'aPosition',
@@ -97,7 +97,7 @@ const subtractPass = new RenderPass(
 );
 
 const boundaryPass = new RenderPass(
-    gl,
+    ctx,
     [shaders.vert.standard, shaders.frag.boundary],
     ['uDeltaX', 'uScale', 'uX'],
     'aPosition',
@@ -106,7 +106,7 @@ const boundaryPass = new RenderPass(
 );
 
 const colorPass = new RenderPass(
-    gl,
+    ctx,
     [shaders.vert.standard, shaders.frag.color],
     ['uColor', 'uImpulsePos', 'uColorFieldTexture'],
     'aPosition',
@@ -115,7 +115,7 @@ const colorPass = new RenderPass(
 );
 
 const vorticityPass = new RenderPass(
-    gl,
+    ctx,
     [shaders.vert.standard, shaders.frag.vorticity],
     ['uDeltaT', 'uDeltaX', 'uVorticity', 'uV'],
     'aPosition',
@@ -123,17 +123,17 @@ const vorticityPass = new RenderPass(
     quad.indices,
 );
 
-let curVelocityField = new FrameBuffer(gl, width, height);
-let nextVelocityField = new FrameBuffer(gl, width, height);
+let curVelocityField = new FrameBuffer(ctx, width, height);
+let nextVelocityField = new FrameBuffer(ctx, width, height);
 
-let curPressureField = new FrameBuffer(gl, width, height);
-let nextPressureField = new FrameBuffer(gl, width, height);
+let curPressureField = new FrameBuffer(ctx, width, height);
+let nextPressureField = new FrameBuffer(ctx, width, height);
 
-let divergenceFb = new FrameBuffer(gl, width, height);
+let divergenceFb = new FrameBuffer(ctx, width, height);
 
 const colorData = makeCheckerboardArr(width, height);
-let curColorField = new FrameBuffer(gl, width, height, colorData);
-let nextColorField = new FrameBuffer(gl, width, height);
+let curColorField = new FrameBuffer(ctx, width, height, colorData);
+let nextColorField = new FrameBuffer(ctx, width, height);
 
 const rho = 1e-3;
 let lastTime = null;
@@ -153,7 +153,7 @@ const drawFrame = (time) => {
     let force = [0.0, 0.0];
     force = scale(force, mouse.velocity, SETTINGS.force);
     [curVelocityField, nextVelocityField] = fluidOps.force(
-        gl,
+        ctx,
         forcePass,
         deltaT,
         rho,
@@ -165,7 +165,7 @@ const drawFrame = (time) => {
 
     // add color
     [curColorField, nextColorField] = fluidOps.color(
-        gl,
+        ctx,
         colorPass,
         [1.0, 0.6, 0.0],
         mouse.position,
@@ -177,7 +177,7 @@ const drawFrame = (time) => {
 
   // advect velocity field
   [curVelocityField, nextVelocityField] = fluidOps.advection(
-      gl,
+      ctx,
       advectPass,
       deltaT,
       curVelocityField,
@@ -197,9 +197,9 @@ const drawFrame = (time) => {
       const jCur = bufs[i % 2];
       const jNext = bufs[(i + 1) % 2];
 
-      jNext.bind(gl);
+      jNext.bind(ctx);
       fluidOps.jacobiIteration(
-          gl,
+          ctx,
           jacobiPass,
           deltaX,
           alpha,
@@ -207,13 +207,13 @@ const drawFrame = (time) => {
           jCur,
           jCur,
       );
-      jNext.unbind(gl);
+      jNext.unbind(ctx);
     }
   }
 
   {
     divergenceFb = fluidOps.divergence(
-        gl,
+        ctx,
         divergencePass,
         deltaX,
         curVelocityField,
@@ -224,7 +224,7 @@ const drawFrame = (time) => {
     const rBeta = 0.25;
 
     [curPressureField, nextPressureField] = fluidOps.jacobiMethod(
-        gl,
+        ctx,
         jacobiPass,
         SETTINGS.iterations,
         deltaX,
@@ -239,7 +239,7 @@ const drawFrame = (time) => {
   // gradient subtraction
   {
     [curVelocityField, nextVelocityField] = fluidOps.subtract(
-        gl,
+        ctx,
         subtractPass,
         deltaX,
         curPressureField,
@@ -251,7 +251,7 @@ const drawFrame = (time) => {
   // boundaries
   // vel
   [curVelocityField, nextVelocityField] = fluidOps.boundary(
-      gl,
+      ctx,
       boundaryPass,
       deltaX,
       -1.0,
@@ -261,7 +261,7 @@ const drawFrame = (time) => {
 
   // pressure
   [curPressureField, nextPressureField] = fluidOps.boundary(
-      gl,
+      ctx,
       boundaryPass,
       deltaX,
       1.0,
@@ -271,7 +271,7 @@ const drawFrame = (time) => {
 
   // approximate small vortices (vorticity confinement)
   [curVelocityField, nextVelocityField] = fluidOps.vorticity(
-      gl,
+      ctx,
       vorticityPass,
       deltaT,
       deltaX,
@@ -282,7 +282,7 @@ const drawFrame = (time) => {
 
   // advect color field
   [curColorField, nextColorField] = fluidOps.advection(
-      gl,
+      ctx,
       advectPass,
       deltaT,
       curColorField,
@@ -292,22 +292,22 @@ const drawFrame = (time) => {
 
   // render texture
 
-  gl.clearColor(0.3, 0.8, 0.0, 1.0);
-  gl.clear(gl.COLOR_BUFFER_BIT);
-  quadPass.useProgram(gl);
+  ctx.clearColor(0.3, 0.8, 0.0, 1.0);
+  ctx.clear(ctx.COLOR_BUFFER_BIT);
+  quadPass.useProgram(ctx);
 
-  gl.uniform1i(quadPass.uniforms.uTex, 0);
+  ctx.uniform1i(quadPass.uniforms.uTex, 0);
 
-  gl.activeTexture(gl.TEXTURE0);
-  gl.bindTexture(gl.TEXTURE_2D, curColorField.tex);
+  ctx.activeTexture(ctx.TEXTURE0);
+  ctx.bindTexture(ctx.TEXTURE_2D, curColorField.tex);
 
-  gl.bindBuffer(gl.ARRAY_BUFFER, quadPass.vertBuffer);
-  gl.vertexAttribPointer(quadPass.attribLoc, 2, gl.FLOAT, false, 0, 0);
-  gl.enableVertexAttribArray(quadPass.attribLoc);
+  ctx.bindBuffer(ctx.ARRAY_BUFFER, quadPass.vertBuffer);
+  ctx.vertexAttribPointer(quadPass.attribLoc, 2, ctx.FLOAT, false, 0, 0);
+  ctx.enableVertexAttribArray(quadPass.attribLoc);
 
-  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, quadPass.indexBuffer);
+  ctx.bindBuffer(ctx.ELEMENT_ARRAY_BUFFER, quadPass.indexBuffer);
 
-  gl.drawElements(gl.TRIANGLES, 6, gl.UNSIGNED_SHORT, 0);
+  ctx.drawElements(ctx.TRIANGLES, 6, ctx.UNSIGNED_SHORT, 0);
 
   requestAnimationFrame(drawFrame);
 };
