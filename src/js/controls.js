@@ -12,7 +12,11 @@ export default class Controls {
       const slider = control.getElementsByClassName('parameter')[0];
       const value = control.getElementsByClassName('value')[0];
       const syncValue = () => {
-        value.textContent = slider.value;
+        if (slider.id === 'viscosity') {
+          value.textContent = `1e${slider.value}`;
+        } else {
+          value.textContent = slider.value;
+        }
       };
       syncValue();
       slider.addEventListener('input', syncValue);

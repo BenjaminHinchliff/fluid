@@ -15,16 +15,7 @@ const controls = new Controls(document.getElementById('controls'));
 
 /** @type {HTMLCanvasElement} */
 const canvas = document.getElementById('fluid');
-let width;
-let height;
-
-const getDims = () => {
-  width = canvas.width;
-  height = canvas.height = width;
-};
-
-getDims();
-window.addEventListener('resize', getDims);
+const {width, height} = canvas;
 
 const ctx = canvas.getContext('webgl');
 if (ctx === null) {
@@ -37,9 +28,6 @@ ctx.getExtension('OES_texture_float_linear');
 ctx.getExtension('WEBGL_color_buffer_float');
 
 ctx.viewport(0, 0, ctx.canvas.width, ctx.canvas.height);
-
-ctx.clearColor(0.0, 0.0, 0.0, 1.0);
-ctx.clear(ctx.COLOR_BUFFER_BIT);
 
 const mouse = new MouseListener(canvas);
 
